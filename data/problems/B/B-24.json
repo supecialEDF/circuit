@@ -1,0 +1,213 @@
+{
+  "id": "B-24",
+  "category": "B",
+  "title": "フォトカプラ：絶縁して信号を伝える",
+  "difficulty": 3,
+  "prerequisites": [
+    "B-03",
+    "B-13"
+  ],
+  "judge": "dc",
+  "learningGoal": "フォトカプラの入力側（LED）と出力側（フォトトランジスタ）の電流が CTR で結ばれていることを理解し、両側の抵抗を同時に設計できる。",
+  "statement": "### 状況\n2 つの回路を**電気的に絶縁**したまま信号だけを伝えたいときに使うのが**フォトカプラ**（フォトアイソレータとも呼ぶ）。内部には「LED（発光側）」と「フォトトランジスタ（受光側）」が向かい合って封入されており、LED の光でトランジスタを制御する。両者は光だけで結ばれているので、片側が数万 V になってももう片側には伝わらない（絶縁耐圧）。\n\n| 部品 | つながり | 値 |\n|---|---|---|\n| V1 | `vin`–`gnd` | 5 V （入力側：マイコン側を想定）|\n| V2 | `vcc`–`gnd` | 12 V （出力側：リレー駆動側を想定）|\n| TP_out | `out` | 出力電圧の測定ポイント |\n\n**電流伝達比 CTR（Current Transfer Ratio）**: LED に流した電流 $I_F$ に対して、トランジスタ側にどれだけの電流 $I_C$ が流れるかを表す比率。$I_C = \\mathrm{CTR} \\times I_F$。今回は CTR = 0.5（つまり 50%）の素子を使う。\n\n### やること\n1. U_OPTO を置く。入力側（anode, cathode）は `vin` 側へ、出力側（collector, emitter）は `vcc` 側へつなぐ\n2. 入力側に抵抗 `R_in` を置き、LED 電流 $I_F$ が **10 mA** になるようにする\n3. 出力側に抵抗 `R_out` を置き、トランジスタ側の `out` 電圧が **6.0 V** になるようにする\n4. 選択問題：もし CTR が 0.25 の個体に交換した場合、同じ `out` の電圧を得るには `R_in` をどう変えるか？\n\n### 条件\n- U_OPTO の LED 順方向電圧 $V_f = 1.2\\,\\mathrm{V}$、CTR = 0.5、トランジスタの飽和電圧 $V_{CE(sat)} = 0.2\\,\\mathrm{V}$\n- 判定: LED 電流 10 mA ±2%、コレクタ電流 5 mA ±2%、`out` = 6.0 V ±1.5%、R_in と R_out の接続、選択問題",
+  "questions": [
+    {
+      "key": "q1",
+      "kind": "choice",
+      "prompt": "CTR が 0.25（半分の性能）のフォトカプラに交換した場合、同じ `out` = 6.0 V を得るには `R_in` の値をどう変えればよいか？",
+      "options": [
+        "半分（1/2）の値にする",
+        "同じ値のままにする",
+        "2 倍の値にする",
+        "4 倍の値にする"
+      ]
+    }
+  ],
+  "hints": [
+    "入力側: `vin`(5V) → R_in → anode → cathode → gnd。LED には $V_f = 1.2\\,\\mathrm{V}$ の降下がある。R_in には $(5 - 1.2)\\,\\mathrm{V}$ が掛かる。出力側: `vcc`(12V) → R_out → collector → emitter → gnd。`out` はコレクタ側。",
+    "入力側: $R_{in} = \\dfrac{5 - 1.2}{I_F}$。$I_F = 10\\,\\mathrm{mA}$ になるように決める。出力側: $I_C = \\mathrm{CTR} \\times I_F = 0.5 \\times 10\\,\\mathrm{mA} = 5\\,\\mathrm{mA}$。$V_{out} = 12 - I_C \\cdot R_{out}$ が 6.0 V になるには、$R_{out}$ に何 V 掛かればよいか考える。",
+    "$R_{in} = 3.8\\,\\mathrm{V} / 10\\,\\mathrm{mA} = 380\\,\\Omega$。R_out には $12 - 6 = 6\\,\\mathrm{V}$ 掛かるので $R_{out} = 6\\,\\mathrm{V} / 5\\,\\mathrm{mA} = 1200\\,\\Omega$。CTR が半分（0.25）になったら、同じ $I_C = 5\\,\\mathrm{mA}$ を得るには $I_F = 20\\,\\mathrm{mA}$ が必要 → R_in を半分（190 Ω）にする。"
+  ],
+  "availableComponents": [
+    "U_OPTO",
+    "R"
+  ],
+  "fixedComponents": [
+    {
+      "id": "V1",
+      "type": "V_DC",
+      "params": {
+        "V": 5
+      },
+      "connect": [
+        "vin",
+        "gnd"
+      ],
+      "locked": true,
+      "rotation": 90,
+      "position": {
+        "x": 60,
+        "y": 220
+      }
+    },
+    {
+      "id": "V2",
+      "type": "V_DC",
+      "params": {
+        "V": 12
+      },
+      "connect": [
+        "vcc",
+        "gnd"
+      ],
+      "locked": true,
+      "rotation": 90,
+      "position": {
+        "x": 500,
+        "y": 220
+      }
+    },
+    {
+      "id": "TP_out",
+      "type": "TP",
+      "params": {},
+      "connect": [
+        "out"
+      ],
+      "locked": true,
+      "rotation": 0,
+      "position": {
+        "x": 400,
+        "y": 100
+      }
+    }
+  ],
+  "checks": [
+    {
+      "type": "dcCurrent",
+      "match": {
+        "type": "R",
+        "nets": [
+          "vin",
+          "a"
+        ]
+      },
+      "expected": 0.01,
+      "tolerancePct": 2,
+      "unit": "A"
+    },
+    {
+      "type": "dcCurrent",
+      "match": {
+        "type": "R",
+        "nets": [
+          "vcc",
+          "out"
+        ]
+      },
+      "expected": 0.005,
+      "tolerancePct": 2,
+      "unit": "A"
+    },
+    {
+      "type": "dcVoltage",
+      "node": "out",
+      "expected": 6.0,
+      "tolerancePct": 1.5,
+      "unit": "V"
+    },
+    {
+      "type": "connection",
+      "match": {
+        "type": "R",
+        "nets": [
+          "vin",
+          "a"
+        ]
+      },
+      "nets": [
+        "vin",
+        "a"
+      ]
+    },
+    {
+      "type": "connection",
+      "match": {
+        "type": "R",
+        "nets": [
+          "vcc",
+          "out"
+        ]
+      },
+      "nets": [
+        "vcc",
+        "out"
+      ]
+    },
+    {
+      "type": "connection",
+      "match": {
+        "type": "U_OPTO"
+      },
+      "pins": {
+        "anode": "a",
+        "cathode": "gnd",
+        "collector": "out",
+        "emitter": "gnd"
+      }
+    },
+    {
+      "type": "multipleChoice",
+      "key": "q1",
+      "answerIndex": 0
+    }
+  ],
+  "referenceSolution": [
+    {
+      "id": "U1",
+      "type": "U_OPTO",
+      "params": {
+        "Vf": 1.2,
+        "CTR": 0.5
+      },
+      "connect": [
+        "a",
+        "gnd",
+        "out",
+        "gnd"
+      ]
+    },
+    {
+      "id": "R1",
+      "type": "R",
+      "params": {
+        "R": 380
+      },
+      "connect": [
+        "vin",
+        "a"
+      ]
+    },
+    {
+      "id": "R2",
+      "type": "R",
+      "params": {
+        "R": 1200
+      },
+      "connect": [
+        "vcc",
+        "out"
+      ]
+    }
+  ],
+  "referenceAnswers": {
+    "q1": 0
+  },
+  "explanation": {
+    "solution": "**手順1: 入力側（LED 側）の抵抗設計** `vin`(5V) → R_in → anode → cathode → gnd の直列回路。LED の順方向電圧 $V_f = 1.2\\,\\mathrm{V}$ を引いた $(5 - 1.2) = 3.8\\,\\mathrm{V}$ が R_in に掛かる。目標 $I_F = 10\\,\\mathrm{mA}$ なので、\n$$R_{in} = \\frac{3.8\\,\\mathrm{V}}{10\\,\\mathrm{mA}} = 380\\,\\Omega$$\n\n**手順2: 出力側（トランジスタ側）の電流** CTR = 0.5 なので、\n$$I_C = 0.5 \\times 10\\,\\mathrm{mA} = 5\\,\\mathrm{mA}$$\nこの電流が `vcc` → R_out → collector → emitter → gnd に流れる。\n\n**手順3: 出力側の抵抗設計** `out` はコレクタ側（プルアップ構成）。目標 $V_{out} = 6.0\\,\\mathrm{V}$ なので、R_out には $12 - 6.0 = 6.0\\,\\mathrm{V}$ が掛かる。\n$$R_{out} = \\frac{6.0\\,\\mathrm{V}}{5\\,\\mathrm{mA}} = 1200\\,\\Omega$$\n\n**手順4: 選択問題** CTR が 0.25（半分）になったら、同じ $I_C = 5\\,\\mathrm{mA}$ を得るには $I_F = 5\\,\\mathrm{mA} / 0.25 = 20\\,\\mathrm{mA}$ が必要。R_in には同じ 3.8 V が掛かるので、$R_{in} = 3.8 / 20\\,\\mathrm{mA} = 190\\,\\Omega$。つまり**元の半分**の抵抗値にする必要がある。",
+    "why": "**絶縁の重要性**: 産業機器や医療機器では、高電圧を扱うパワー部（モータ・インバータ・商用電源）と、人間が触れたりマイコンが制御したりする低電圧部を絶縁する**安全上の義務**がある。フォトカプラは光を介するので、両側のグラウンド電位が異なったり、片側にサージ（数千 V）が来たりしても他方に伝わらない。\n\n**CTR のばらつき**: 実際のフォトカプラの CTR は個体差が大きく、また経年劣化（LED の輝度低下）で半減することもある。今回の問題のように「設計値ちょうど」で組むと、数年後に誤動作する恐れがある。実設計では**最悪値（CTR の最小値）**で電流を計算し、余裕を持たせて $I_F$ を多めに流す。また、デジタル信号として使う場合は飽和状態（$V_{CE(sat)} \\approx 0.2\\,\\mathrm{V}$）まで十分に駆動する。\n\n**入力側と出力側のグラウンド**: 絶縁されているので、V1 の gnd と V2 の gnd は別物でもよい（実際は別系統の電源になることが多い）。シミュレータ上は同じ `gnd` ネット名で結んでも動くが、実回路では「入力 GND」「出力 GND」と分けて扱う。",
+    "mistakes": "- **LED の Vf を考慮せず $R_{in} = 5/10\\,\\mathrm{mA} = 500\\,\\Omega$ とする**: $I_F = (5-1.2)/500 = 7.6\\,\\mathrm{mA}$、$I_C = 3.8\\,\\mathrm{mA}$、$V_{out} = 12 - 3.8 \\times 1.2 = 7.44\\,\\mathrm{V}$ になり不合格。\n- **R_out の計算で「$V_{out} = 6\\,\\mathrm{V}$」をそのまま使い $R_{out} = 12\\,\\mathrm{V}/5\\,\\mathrm{mA} = 2400\\,\\Omega$ とする**: R_out には 12 V ではなく「12 − 6 = 6 V」が掛かる。この誤答では $12 - 5\\,\\mathrm{mA}\\times2.4\\,\\mathrm{k\\Omega} = 0\\,\\mathrm{V}$ となる計算で、実際には受光側のトランジスタが飽和し、`out` は約 0.03 V になって不合格。\n- **U_OPTO の入出力を逆にする**（`[\"out\", \"gnd\", \"a\", \"gnd\"]` など）: LED に 12 V が掛かり大電流で壊れるか、トランジスタ側に 5 V しか掛からず設計どおりの電圧にならない。接続判定でも不合格。\n- **U_OPTO のコレクタとエミッタを逆にする**（`[\"a\", \"gnd\", \"gnd\", \"out\"]`）: 受光側のトランジスタが正しく動かず、`out` は設計どおりの 6.0 V にならない（このシミュレータでは電源電圧を超える不自然な値になる）。接続の判定でも不合格。",
+    "practice": "- フォトカプラは、AC100 V をスイッチングするリレー駆動、インバータのゲートドライブ、通信ラインの絶縁（RS-485 や CAN の絶縁版）、医療機器の患者接続部などに使われる。\n- 高速通信向けには応答速度が速い**デジタルアイソレータ**（磁気結合や容量結合を使う）が主流になりつつあるが、コストと絶縁耐圧ではフォトカプラが依然強い。\n- LED の駆動にはマイコンの GPIO を直接使うことが多いが、GPIO の出力電流（数 mA〜20 mA）で足りるかも確認する。足りない場合はトランジスタで増幅する。\n- データシートには **絶縁耐圧**（例: 5000 Vrms for 1 minute）と **CTR ランク**（例: 80%〜160%）が書かれている。",
+    "next": "- B-23: フォトダイオード（受光素子だけ）。フォトカプラの受光側は、光電流をトランジスタで増幅している。\n- B-27: マイコンと 24 V 系をつなぐレベルシフト。NPN の代わりにフォトカプラを使えば、絶縁したまま同じ駆動ができる。\n- C-18: 差動増幅回路。絶縁せずに、2 つの系の間の同相ノイズを取り除く別の方法。"
+  }
+}
