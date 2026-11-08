@@ -4,7 +4,7 @@ NANDgame風の操作で電子回路を学ぶ静的Webゲーム（ビルド不要
 部品を置いて配線し、値を設定して「チェック」を押すと、シミュレーションで自動判定されます。
 
 ## 遊ぶ（GitHub Pages）
-https://sunfish1024.github.io/circuit/
+https://supecialedf.github.io/circuit/
 
 公開設定: リポジトリの Settings → Pages → Build and deployment → Source を **Deploy from a branch**、
 Branch を公開したいブランチ、フォルダを **/ (root)** にします（`.nojekyll` 同梱済み）。
