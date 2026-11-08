@@ -1,0 +1,26 @@
+diff --git a/src/circuit-main/src/ui/app.js b/work5/src/ui/app.js
+index a538b5d..52b4300 100644
+--- a/src/circuit-main/src/ui/app.js
++++ b/work5/src/ui/app.js
+@@ -55,6 +55,7 @@ import { componentRegistry } from "../components/registry.js";
+ import { simulate } from "../sim/simulator.js";
+ import { runChecks, summarizeCheckResults } from "../checks/runner.js";
+ import { formatMetricValue } from "../core/units.js";
++import { renderWaveDockHtml, bindWaveDock } from "./waveform.js";
+ import {
+   bindLearningEvents,
+   collectAnswers,
+@@ -1276,11 +1277,13 @@ function renderBoard(root, state) {
+      </div>
+     </div>
+     </div>
++    ${renderWaveDockHtml(state)}
+   `;
+ 
+   bindBoardEvents(root, state);
+   setupProblemPanelResize(root);
+   setupBoardFit(root);
++  bindWaveDock(root, state, { rerender: forceRender });
+ }
+ 
+ /** 初回の倍率を決め、表示領域の大きさが変わったら（パネルの開閉・リサイズ・ウィンドウ）倍率を更新する。 */

@@ -2584,3 +2584,269 @@ label {
 .symbol-body .sym-logic-off {
   fill: var(--color-text-muted);
 }
+
+
+/* ==========================================================================
+   波形ビューア（src/ui/waveform.js）: ボードの下に置く、高さを変えられるパネル
+   ========================================================================== */
+
+.wave-dock {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--color-border-strong);
+  background: var(--color-surface-3);
+}
+
+.wave-dock {
+  max-height: 62%;
+}
+
+.wave-dock.is-collapsed,
+.wave-dock.is-empty {
+  height: auto;
+}
+
+.wave-resize {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 6;
+  touch-action: none;
+}
+
+.wave-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wave-toggle {
+  font-weight: 600;
+  padding: 2px 10px;
+}
+
+.wave-range {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.wave-range-btn {
+  padding: 2px 10px;
+  font-size: var(--text-xs, 12px);
+}
+
+.wave-hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs, 12px);
+}
+
+.wave-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+}
+
+.wave-signals {
+  overflow: auto;
+  padding: var(--space-2);
+  border-right: 1px solid var(--color-border);
+}
+
+.wave-group summary {
+  cursor: pointer;
+  font-size: var(--text-xs, 12px);
+  color: var(--color-text-muted);
+  margin: 2px 0 4px;
+}
+
+.wave-count {
+  margin-left: 6px;
+  color: var(--color-text-faint);
+}
+
+.wave-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--space-2);
+}
+
+.wave-chip {
+  margin: 0;
+  min-height: 0;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 6px;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.wave-chip input[type="checkbox"] {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--trace, var(--color-accent));
+}
+
+.wave-chip span {
+  flex: 1;
+  text-align: left;
+}
+
+.wave-chip:hover {
+  background: var(--color-surface-2);
+}
+
+.wave-chip.is-on {
+  border-left-color: var(--trace, var(--color-accent));
+  background: var(--color-surface-2);
+}
+
+.wave-main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wave-plots {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.wave-svg {
+  display: block;
+}
+
+.wave-bg {
+  fill: var(--color-board);
+}
+
+.wave-grid {
+  stroke: var(--color-board-grid-strong);
+  stroke-width: 1;
+}
+
+.wave-zero {
+  stroke: rgba(148, 163, 184, 0.45);
+  stroke-width: 1;
+}
+
+.wave-window {
+  fill: rgba(251, 191, 36, 0.09);
+  stroke: rgba(251, 191, 36, 0.35);
+  stroke-dasharray: 3 3;
+}
+
+.wave-checkpoint {
+  stroke: rgba(251, 191, 36, 0.7);
+  stroke-dasharray: 4 3;
+}
+
+.wave-trace {
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.wave-ylabel,
+.wave-xlabel {
+  fill: var(--color-text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wave-unit {
+  fill: var(--color-text-faint);
+  font-size: 11px;
+}
+
+.wave-cursor {
+  stroke: var(--color-text);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  pointer-events: none;
+}
+
+.wave-select {
+  fill: rgba(56, 189, 248, 0.15);
+  stroke: var(--color-accent);
+  pointer-events: none;
+}
+
+.wave-empty {
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.wave-stats {
+  flex: none;
+  max-height: 45%;
+  overflow: auto;
+  border-top: 1px solid var(--color-border);
+}
+
+.wave-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wave-table th,
+.wave-table td {
+  padding: 2px 8px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wave-table th:first-child,
+.wave-table td:first-child {
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.wave-table th {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.wave-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.wave-note {
+  margin: 2px 8px 4px;
+  color: var(--color-text-faint);
+  font-size: 11px;
+}
