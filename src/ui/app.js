@@ -56,6 +56,7 @@ import { simulate } from "../sim/simulator.js";
 import { runChecks, summarizeCheckResults } from "../checks/runner.js";
 import { formatMetricValue } from "../core/units.js";
 import { renderWaveDockHtml, bindWaveDock } from "./waveform.js";
+import { computeConnects } from "./netsync.js";
 import {
   bindLearningEvents,
   collectAnswers,
@@ -1948,183 +1949,29 @@ function syncConnectFromWires() {
 
   if (components.length === 0) return;
 
-  const keyOf = (componentId, pinIndex) => `${componentId}::${pinIndex}`;
+  // 画面に見えている接続（ワイヤ・固定部品のネット・GND 記号）だけからネット名を決める。
+  // 詳しい規則は src/ui/netsync.js。
+  const fixedById = new Map(
+    (state.currentProblem?.fixedComponents ?? []).map((c) => [c.id, c.connect])
+  );
 
-  // ピンの親子関係（Union-Find）
-  const parent = new Map();
-
-  for (const component of components) {
-    const pinCount = safePinNames(component.type).length;
-
-    for (let i = 0; i < pinCount; i += 1) {
-      parent.set(keyOf(component.id, i), keyOf(component.id, i));
-    }
-  }
-
-  const find = (key) => {
-    let root = key;
-
-    while (parent.get(root) !== root) {
-      root = parent.get(root);
-    }
-
-    // 経路圧縮
-    let current = key;
-
-    while (parent.get(current) !== root) {
-      const next = parent.get(current);
-      parent.set(current, root);
-      current = next;
-    }
-
-    return root;
-  };
-
-  const union = (a, b) => {
-    const rootA = find(a);
-    const rootB = find(b);
-
-    if (rootA !== rootB) {
-      parent.set(rootA, rootB);
-    }
-  };
-
-  const pinIndexOf = (endpoint) => {
-    if (!endpoint) return -1;
-
-    const component = components.find((c) => c.id === endpoint.componentId);
-
-    if (!component) return -1;
-
-    const names = safePinNames(component.type);
-
-    if (typeof endpoint.pin === "number") {
-      return endpoint.pin >= 0 && endpoint.pin < names.length
-        ? endpoint.pin
-        : -1;
-    }
-
-    return names.indexOf(String(endpoint.pin));
-  };
-
-  for (const wire of state.board.wires) {
-    const fromIndex = pinIndexOf(wire.from);
-    const toIndex = pinIndexOf(wire.to);
-
-    if (fromIndex < 0 || toIndex < 0) continue;
-    if (
-      wire.from.componentId === wire.to.componentId &&
-      fromIndex === toIndex
-    ) {
-      continue;
-    }
-
-    union(
-      keyOf(wire.from.componentId, fromIndex),
-      keyOf(wire.to.componentId, toIndex)
-    );
-  }
-
-  // グループごとのネット名を決定
-  const groupInfo = new Map(); // rootKey -> { name, locked, hasGround, size }
-  const usedNames = new Set();
-
-  const getGroup = (rootKey) => {
-    if (!groupInfo.has(rootKey)) {
-      groupInfo.set(rootKey, { name: null, locked: false, hasGround: false, size: 0 });
-    }
-
-    return groupInfo.get(rootKey);
-  };
+  const next = computeConnects({
+    components,
+    wires: state.board.wires,
+    pinNamesOf: (type) => safePinNames(type),
+    originalConnectOf: (id) => fixedById.get(id) ?? null,
+  });
 
   for (const component of components) {
-    const names = safePinNames(component.type);
-    const connect = Array.isArray(component.connect)
-      ? component.connect
-      : [];
+    const connect = next.get(component.id);
+    if (!connect) continue;
 
-    for (let i = 0; i < names.length; i += 1) {
-      const rootKey = find(keyOf(component.id, i));
-      const group = getGroup(rootKey);
-      group.size += 1;
+    const current = Array.isArray(component.connect) ? component.connect : [];
+    const same =
+      current.length === connect.length &&
+      connect.every((name, i) => (current[i] ?? "") === name);
 
-      // GND 部品がつながったグループは接地ネットとして扱う
-      if (component.type === "GND") {
-        group.hasGround = true;
-      }
-
-      const existing = typeof connect[i] === "string" ? connect[i].trim() : "";
-
-      if (!existing) continue;
-
-      usedNames.add(existing);
-
-      // 固定部品の名前を優先、それ以外は最初に見つけた名前
-      if (!group.name || (component.locked && !group.locked)) {
-        group.name = existing;
-      }
-
-      if (component.locked) {
-        group.locked = true;
-      }
-    }
-  }
-
-  // GND 部品につながったグループは、固定部品が名前を持っている場合を除き
-  // ネット名を "gnd" にする。これにより DC 解析の基準ノードが保証される。
-  for (const group of groupInfo.values()) {
-    if (group.hasGround && !group.locked) {
-      group.name = "gnd";
-      usedNames.add("gnd");
-    }
-  }
-
-  // 名前のないグループ（ワイヤで結合されたもの）に自動採番
-  let autoIndex = 1;
-
-  for (const group of groupInfo.values()) {
-    if (!group.name && group.size >= 2) {
-      let candidate = `net${autoIndex}`;
-
-      while (usedNames.has(candidate)) {
-        autoIndex += 1;
-        candidate = `net${autoIndex}`;
-      }
-
-      group.name = candidate;
-      usedNames.add(candidate);
-      autoIndex += 1;
-    }
-  }
-
-  // connect 配列へ書き込み
-  for (const component of components) {
-    const names = safePinNames(component.type);
-
-    if (names.length === 0) continue;
-
-    const connect = Array.isArray(component.connect)
-      ? [...component.connect]
-      : [];
-    let dirty = false;
-
-    while (connect.length < names.length) {
-      connect.push("");
-      dirty = true;
-    }
-
-    for (let i = 0; i < names.length; i += 1) {
-      const rootKey = find(keyOf(component.id, i));
-      const group = groupInfo.get(rootKey);
-      const name = group?.name ?? null;
-
-      if (name && connect[i] !== name) {
-        connect[i] = name;
-        dirty = true;
-      }
-    }
-
-    if (dirty) {
+    if (!same) {
       updateComponent(component.id, { connect });
     }
   }
@@ -2422,7 +2269,8 @@ function renderConnectFields(component, isLocked) {
   }
 
   const connect = Array.isArray(component.connect) ? component.connect : [];
-  const disabledAttr = isLocked ? "disabled" : "";
+  // 接続はワイヤだけで決まる（手入力すると画面に見えない接続ができてしまうため、表示のみ）
+  const disabledAttr = "disabled";
 
   const fields = pinNames
     .map((pinName, index) => {
@@ -2437,7 +2285,7 @@ function renderConnectFields(component, isLocked) {
             data-connect-index="${index}"
             type="text"
             value="${escapeHtml(netValue)}"
-            placeholder="例: vin, gnd, out"
+            placeholder="（未接続）"
             list="known-nets-datalist"
             ${disabledAttr}
           />
@@ -2449,8 +2297,8 @@ function renderConnectFields(component, isLocked) {
   const helpText = isLocked
     ? `<div class="field-help">固定部品のため変更できません。</div>`
     : `<div class="field-help">
-        接続するネット名を入力してください。候補から選ぶこともできます。<br>
-        <b>配線モード</b>でワイヤを引くと自動で設定されます。
+        接続は<b>ワイヤだけ</b>で決まります。<b>配線モード</b>で端子どうしをつなぐと、ネット名が自動で付きます。
+        同じネット名の端子は電気的につながっています。
       </div>`;
 
   return fields + helpText;
@@ -2572,6 +2420,8 @@ function bindDeleteSelected(root) {
       }
 
       removeComponent(id);
+      // 削除した部品とつながっていたワイヤも消えるので、残った端子のネット名を付け直す
+      syncConnectFromWires();
       setStatus(`部品 ${id} を削除しました。`, "info");
     });
   });
@@ -3450,6 +3300,7 @@ function bindGlobalKeyboard() {
         }
 
         removeComponent(component.id);
+        syncConnectFromWires();
         setStatus(`部品 ${component.id} を削除しました。`, "info");
       }
     }
