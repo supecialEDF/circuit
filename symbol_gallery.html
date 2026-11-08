@@ -236,6 +236,14 @@
       document.getElementById("sub-count").textContent = components.length;
       document.getElementById("grid-count").textContent = components.length;
 
+      // ピン名はボードと同じ規則で置く（左右のピン → 線の上で外側寄せ、上ピン → 右上、下ピン → 右下）
+      const pinLabelSvg = (point, text) => {
+        let x = point.x + 6, y = point.y + 12, a = "start";
+        if (point.x <= 0) { x = point.x - 6; y = point.y - 4; a = "end"; }
+        else if (point.x >= 96) { x = point.x + 6; y = point.y - 4; a = "start"; }
+        else if (point.y <= 0) { x = point.x + 6; y = point.y - 4; a = "start"; }
+        return `<text class="board-pin-label" x="${x}" y="${y}" text-anchor="${a}">${text}</text>`;
+      };
       grid.innerHTML = components
         .map((definition) => {
           const type = definition.type;
@@ -247,7 +255,7 @@
             .map(
               (point, index) => `
               <circle class="board-pin" cx="${point.x}" cy="${point.y}" r="3.5"></circle>
-              <text class="board-pin-label" x="${point.x}" y="${point.y < 10 ? point.y - 6 : point.y + (point.x > 48 && point.y >= 26 && point.y < 42 ? -8 : 12)}" text-anchor="middle">${pinNames[index] ?? index + 1}</text>
+              ${pinLabelSvg(point, pinNames[index] ?? index + 1)}
             `
             )
             .join("");
@@ -255,7 +263,7 @@
           return `
             <div class="card">
               <div class="symbol-stage">
-                <svg class="sym-root" viewBox="-12 -14 120 84">
+                <svg class="sym-root" viewBox="-52 -14 200 84">
                   <g>${body}</g>
                   ${pinDots}
                 </svg>
